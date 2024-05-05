@@ -10,6 +10,7 @@ const schema = Joi.object({
 
   KITE_API_KEY: Joi.string().required(),
   KITE_API_SECRET: Joi.string().required(),
+  SESSION_SECRET: Joi.string().base64().required(),
 }).unknown(true) // Allow additional variables not defined in schema
 
 // Load and validate environment variables
@@ -24,6 +25,7 @@ const config = {
   port: envVars.PORT,
   mongo_conn_url: `${envVars.MONGO_URL}/${envVars.MONGO_DB_NAME}`,
   redis_url: envVars.REDIS_URL,
+  session_secret: envVars.SESSION_SECRET,
   kite: {
     api_key: envVars.KITE_API_KEY,
     api_secret: envVars.KITE_API_SECRET,

@@ -3,13 +3,28 @@ const config = require('./config/env')
 const app = require('./app')
 const logger = require('./config/logger')
 const httpStatus = require('http-status')
+const session = require('express-session')
+const MongoStore = require('connect-mongo')(session)
 
 require('./config/redis')
-require('./config/mongoose')
+const mongoose = require('./config/mongoose')
 
 const port = config.port
 
 logger.info(`-- Starting server -- ${Date.now()}`)
+
+// Initialize express-session middleware
+app.use(
+  session({
+    secret: config.session_secret,
+    resave: false,
+    saveUninitialized: false,
+    store: new MongoStore({ mongooseConnection: mongoose.connection }),
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 12, // 1 day (adjust as needed)
+    },
+  })
+)
 
 const server = app.listen(port, () => {
   logger.info(`Server is running on port ${port}`)
