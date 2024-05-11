@@ -1,24 +1,27 @@
-const { logger } = require('../config/logger')
-const { config } = require('../config/env')
-const httpStatus = require('http-status')
+const { logger } = require('../config/logger');
+const httpStatus = require('http-status');
+const config = require('./env');
 
 const asyncHandler = (controller) => {
   return async (req, res, next) => {
     try {
-      return await controller(req, res, next)
+      return await controller(req, res, next);
     } catch (error) {
-      logger.error(`API Error - ${err}`)
-
-      if (config.env === 'developement') {
-        return res
-          .status(httpStatus.INTERNAL_SERVER_ERROR)
-          .json({ error: error })
+      if (config.env === 'development') {
+        console.log(error);
       }
-      return res
-        .status(httpStatus.INTERNAL_SERVER_ERROR)
-        .json({ error: 'Internal Server Error' })
-    }
-  }
-}
+      logger.error(error);
+      logger.error(`API Error - ${error}`);
 
-module.exports.catchAsync = asyncHandler
+      return res
+        .status(
+          Boolean(httpStatus[error?.status])
+            ? error?.status
+            : httpStatus.INTERNAL_SERVER_ERROR
+        )
+        .json({ error: error?.message });
+    }
+  };
+};
+
+module.exports.catchAsync = asyncHandler;

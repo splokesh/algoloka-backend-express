@@ -1,9 +1,10 @@
 const express = require('express')
 const { catchAsync } = require('../../config/catchAsync')
-const { getKiteLoginUrl } = require('./kiteauth.controller')
+const { getKiteLoginUrl, kiteAuthorize } = require('./kiteauth.controller')
 
-const kiteAuthRoutes = express.Router()
+const kiteAuthPubilcRoutes = express.Router()
 
-kiteAuthRoutes.get('/login-url', catchAsync(getKiteLoginUrl))
+kiteAuthPubilcRoutes.get('/login-url', catchAsync(getKiteLoginUrl))
+kiteAuthPubilcRoutes.get('/authorize', catchAsync(kiteAuthorize))
 
-module.exports.kiteAuthRoutes = kiteAuthRoutes
+module.exports.kiteAuthPubilcRoutes = kiteAuthPubilcRoutes

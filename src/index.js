@@ -4,10 +4,12 @@ const app = require('./app')
 const logger = require('./config/logger')
 const httpStatus = require('http-status')
 const session = require('express-session')
-const MongoStore = require('connect-mongo')(session)
+const MongoStore = require('connect-mongo')
 
 require('./config/redis')
-const mongoose = require('./config/mongoose')
+require('./config/mongoose')
+
+const routerV1 = require('./v1.routes')
 
 const port = config.port
 
@@ -16,16 +18,20 @@ logger.info(`-- Starting server -- ${Date.now()}`)
 // Initialize express-session middleware
 app.use(
   session({
+    name: 'algoloka.sid',
     secret: config.session_secret,
+    httpOnly: true,
+    secure: true,
+    maxAge: 1000 * 60 * 60 * 8,
     resave: false,
-    saveUninitialized: false,
-    store: new MongoStore({ mongooseConnection: mongoose.connection }),
-    cookie: {
-      maxAge: 1000 * 60 * 60 * 12, // 1 day (adjust as needed)
-    },
+    saveUninitialized: true,
+    store: MongoStore.create({
+      mongoUrl: config.mongo_conn_url,
+    }),
   })
 )
 
+app.use('/v1/api', routerV1)
 const server = app.listen(port, () => {
   logger.info(`Server is running on port ${port}`)
 })
