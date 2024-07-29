@@ -1,3 +1,3 @@
-const amqp = require('amqplib')
+// const amqp = require('amqplib');
 
-const connection = await amqp.connect('amqp://localhost')
+// const connection = await amqp.connect('amqp://localhost');

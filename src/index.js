@@ -1,59 +1,32 @@
-const config = require('./config/env')
+import fastify from './app.js';
+import { EN_VIR } from './config/env.js';
+import { logger } from './config/logger.js';
+import { redisClient } from './config/redis.js';
+import { mongooseConnection } from './config/mongoose.js';
+import { v1Routes } from './v1.routes.js';
 
-const app = require('./app')
-const logger = require('./config/logger')
-const httpStatus = require('http-status')
-const session = require('express-session')
-const MongoStore = require('connect-mongo')
+// v1Routes
+v1Routes(fastify);
 
-require('./config/redis')
-require('./config/mongoose')
+// New optionsObject signature
+const start = async () => {
+	try {
+		await fastify.listen({
+			port: EN_VIR.port,
+		});
+		const srv = fastify.server.address();
+		logger.info(`Server listening on ${srv.address}:${srv.port}`);
+	} catch (err) {
+		logger.error('Server error');
+		logger.error(err);
+		throw err;
+	}
+};
 
-const routerV1 = require('./v1.routes')
-
-const port = config.port
-
-logger.info(`-- Starting server -- ${Date.now()}`)
-
-// Initialize express-session middleware
-app.use(
-  session({
-    name: 'algoloka.sid',
-    secret: config.session_secret,
-    httpOnly: true,
-    secure: true,
-    maxAge: 1000 * 60 * 60 * 8,
-    resave: false,
-    saveUninitialized: true,
-    store: MongoStore.create({
-      mongoUrl: config.mongo_conn_url,
-    }),
-  })
-)
-
-app.use('/v1/api', routerV1)
-const server = app.listen(port, () => {
-  logger.info(`Server is running on port ${port}`)
-})
-
-const healthcheck = {
-  uptime: process.uptime(),
-  message: 'OK',
-  timestamp: Date.now(),
-}
-
-app.get('/health', (req, res) => {
-  try {
-    res.send(healthcheck)
-  } catch (error) {
-    healthcheck.message = error
-    res.status(httpStatus.SERVICE_UNAVAILABLE).send(healthcheck)
-  }
-})
+start();
 
 process.on('SIGTERM', () => {
-  logger.error('SIGTERM signal received: closing HTTP server')
-  server.close(() => {
-    logger.info('HTTP server closed')
-  })
-})
+	logger.warn('SIGTERM signal received: closing HTTP server');
+	mongooseConnection.disconnect();
+	redisClient.disconnect();
+});

@@ -1,28 +1,50 @@
-const express = require('express')
-const compression = require('compression')
-const helmet = require('helmet')
-const morgan = require('morgan')
-const cors = require('cors')
-const cookieParser = require('cookie-parser')
+import morgan from 'morgan';
+import Fastify from 'fastify';
+import httpStatus from 'http-status';
+import { logger } from './config/logger.js';
 
-const logger = require('./config/logger')
+const fastify = Fastify();
 
-const app = express()
+const morganMiddleware = morgan('tiny', {
+	stream: {
+		write: (message) => logger.info(message.trim()),
+	},
+});
 
-// Apply middleware
-app.use(compression())
-app.use(helmet())
-app.use(cors())
-app.use(cookieParser())
+(async () => {
+	await fastify.addHook('preHandler', (request, reply, done) => {
+		morganMiddleware(request.raw, reply.raw, done);
+	});
+	await Promise.all([
+		fastify.register(import('@fastify/cors'), {}),
+		fastify.register(import('@fastify/helmet'), {}),
+		fastify.register(import('@fastify/compress'), { global: false }),
+		fastify.register(import('@fastify/rate-limit'), {
+			max: 100,
+			timeWindow: '1 minute',
+		}),
+	]);
+})().then(() => {
+	logger.info('Fastify Middlewares registered');
+});
 
-app.use(
-  morgan('tiny', {
-    stream: { write: (message) => logger.info(message.trim()) },
-  })
-)
+fastify.get('/', (req, reply) => {
+	reply.send('Algoloka-backend');
+});
 
-app.get('/', (req, res) => {
-  res.send('Algoloka-backend')
-})
+const healthcheck = {
+	uptime: process.uptime(),
+	message: 'OK',
+	timestamp: Date.now(),
+};
 
-module.exports = app
+fastify.get('/health', (req, reply) => {
+	try {
+		reply.send(healthcheck);
+	} catch (error) {
+		healthcheck.message = error?.message;
+		reply.status(httpStatus.SERVICE_UNAVAILABLE).send(healthcheck);
+	}
+});
+
+export default fastify;

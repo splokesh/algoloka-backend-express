@@ -1,25 +1,29 @@
-const redis = require('redis');
+import Redis from 'ioredis';
+import { EN_VIR } from './env.js';
+import { logger } from './logger.js';
 
-const config = require('./env');
-const logger = require('./logger');
+logger.info(`Redis Url - ${EN_VIR.redis_url}`);
 
-logger.info(`Redis Url - ${config.redis_url}`);
+let redisClientInstance = null;
 
-const client = redis.createClient({
-  url: config.redis_url,
-  legacyMode: false,
-});
+function getRedisClient() {
+	if (!redisClientInstance) {
+		redisClientInstance = new Redis(EN_VIR.redis_url);
 
-client.on('error', (err) => {
-  logger.error('Redis client error:', err);
-});
-client.on('reconnecting', () => {
-  logger.info('Client is trying to reconnect to the server');
-});
-client.on('ready', () => {
-  logger.info('Client is ready to use');
-});
+		redisClientInstance.on('error', (err) => {
+			logger.error('Redis client error:', err);
+		});
 
-client.connect();
+		redisClientInstance.on('reconnecting', () => {
+			logger.info('Redis client is trying to reconnect to the server');
+		});
 
-module.exports.redisClient = client;
+		redisClientInstance.on('ready', () => {
+			logger.info('Redis client is ready to use');
+		});
+	}
+
+	return redisClientInstance;
+}
+
+export const redisClient = getRedisClient();

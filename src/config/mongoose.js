@@ -1,13 +1,26 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
+import { EN_VIR } from './env.js';
+import { logger } from './logger.js';
 
-const config = require('./env');
-const logger = require('./logger');
+logger.info(`Mongo Url - ${EN_VIR.mongo_url}`);
 
-// MongoDB connection URL
-const MONGODB_URI = config.mongo_conn_url;
+let mongooseInstance = null;
 
-logger.info(`Mongo Url - ${MONGODB_URI}`);
-// Create a Mongoose connection
-const db = mongoose.connect(MONGODB_URI);
+async function getMongooseConnection() {
+	if (!mongooseInstance) {
+		try {
+			await mongoose.connect(EN_VIR.mongo_url);
+			logger.info('Connected to MongoDB');
+			mongooseInstance = mongoose;
+		} catch (error) {
+			logger.error('Error connecting to MongoDB:', error.message);
+			// Handle connection errors
+			process.exit(1);
+		}
+	}
+	return mongooseInstance;
+}
 
-module.exports = db;
+// Export an async function to get the Mongoose connection
+export const getMongoose = getMongooseConnection;
+export const mongooseConnection = getMongooseConnection();

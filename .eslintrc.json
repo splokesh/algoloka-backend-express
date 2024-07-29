@@ -1,0 +1,27 @@
+{
+	"env": {
+		"node": true,
+		"es2021": true
+	},
+	"parserOptions": {
+		"ecmaVersion": 2022,
+		"sourceType": "module"
+	},
+	"extends": ["eslint:recommended", "plugin:prettier/recommended"],
+	"plugins": ["prettier", "import"],
+	"rules": {
+		"prettier/prettier": [
+			"error",
+			{},
+			{
+				"usePrettierrc": true
+			}
+		],
+		"import/newline-after-import": ["error"],
+		"import/no-commonjs": "error",
+		"import/no-self-import": "error",
+		"import/extensions": ["error", "ignorePackages"],
+		"no-console": "warn",
+		"no-unused-vars": "warn"
+	}
+}
