@@ -2,12 +2,8 @@ import { EN_VIR } from './../../config/env.js';
 import { FyersAuthService } from './fyers.auth.services.js';
 
 const fyersAuth = new FyersAuthService();
-export const loginUrl = async () => {
-	const loginUrl = await fyersAuth.loginUrl();
-
-	return {
-		url: loginUrl,
-	};
+export const loginUrl = async (request, reply) => {
+	reply.redirect(await fyersAuth.loginUrl());
 };
 
 export const authorize = async (req, reply) => {
@@ -21,7 +17,7 @@ export const authorize = async (req, reply) => {
 	// 	broker: userProfile.broker,
 	// };
 	// await req?.session.save();
-	return 'OK';
+	return userProfile;
 
 	// return reply.send('OK');
 

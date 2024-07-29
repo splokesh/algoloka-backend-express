@@ -24,8 +24,6 @@ export class FyersAuthService {
 				secret_key: EN_VIR.fyer.secret_id,
 				auth_code,
 			});
-			// console.log(response);
-			console.log(this.#fyersClient);
 			const { access_token, refresh_token } = response;
 
 			this.#fyersClient.setAccessToken(access_token);
@@ -36,7 +34,7 @@ export class FyersAuthService {
 				{
 					id: profile.fy_id,
 					image: profile.image,
-					broker: BROKER.ZERODHA,
+					broker: BROKER.FYERS,
 					email: profile.email_id,
 					shortName: profile.display_name,
 					name: profile.name,
@@ -52,12 +50,12 @@ export class FyersAuthService {
 					upsert: true,
 					new: true,
 				},
-			);
+			).lean();
 
-			await redisClient.set(`FYERS_ACCOUNT`, JSON.stringify(createdProfile), {
-				EX: 60 * 60 * 8, // Eight hours
-			});
+			await redisClient.set(`FYERS_ACCOUNT`, JSON.stringify(createdProfile));
+			await redisClient.expire(`FYERS_ACCOUNT`, 60 * 60 * 8);
 
+			console.log(createdProfile);
 			delete createdProfile.pan;
 			delete createdProfile.accessToken;
 			delete createdProfile.refreshToken;
