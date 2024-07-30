@@ -8,7 +8,6 @@ import { v1Routes } from './v1.routes.js';
 // v1Routes
 v1Routes(fastify);
 
-// New optionsObject signature
 const start = async () => {
 	try {
 		await fastify.listen({

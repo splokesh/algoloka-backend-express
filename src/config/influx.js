@@ -10,6 +10,7 @@ function getInfluxClient() {
 		influxClientInstance = new InfluxDBClient({
 			host: EN_VIR.influxdb.host,
 			token: EN_VIR.influxdb.token,
+			database: EN_VIR.influxdb.database,
 		});
 	}
 

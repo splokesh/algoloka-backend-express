@@ -21,6 +21,7 @@ const schema = Joi.object({
 
 	INFLUXDB_HOST: Joi.string().uri().required(),
 	INFLUXDB_TOKEN: Joi.string().required(),
+	INFLUXDB_DATABASE: Joi.string().required(),
 }).unknown(true); // Allow additional variables not defined in schema
 
 // Load and validate environment variables
@@ -49,5 +50,6 @@ export const EN_VIR = {
 	influxdb: {
 		host: envVars.INFLUXDB_HOST,
 		token: envVars.INFLUXDB_TOKEN,
+		database: envVars.INFLUXDB_DATABASE,
 	},
 };
