@@ -4,8 +4,12 @@ import { logger } from './config/logger.js';
 import { redisClient } from './config/redis.js';
 import { mongooseConnection } from './config/mongoose.js';
 import { v1Routes } from './v1.routes.js';
+import {
+	envokeDataSocket,
+	getDSMInstance,
+} from './features/tickStreamer/envokeSocket.js';
 
-// v1Routes
+// v1 Routes
 v1Routes(fastify);
 
 const start = async () => {
@@ -15,6 +19,8 @@ const start = async () => {
 		});
 		const srv = fastify.server.address();
 		logger.info(`Server listening on ${srv.address}:${srv.port}`);
+
+		envokeDataSocket();
 	} catch (err) {
 		logger.error('Server error');
 		logger.error(err);
@@ -26,6 +32,10 @@ start();
 
 process.on('SIGTERM', () => {
 	logger.warn('SIGTERM signal received: closing HTTP server');
+	const dsm = getDSMInstance();
+	if (dsm) {
+		dsm.close();
+	}
 	mongooseConnection.disconnect();
 	redisClient.disconnect();
 });

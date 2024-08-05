@@ -2,8 +2,11 @@ import morgan from 'morgan';
 import Fastify from 'fastify';
 import httpStatus from 'http-status';
 import { logger } from './config/logger.js';
+import { EN_VIR } from './config/env.js';
 
-const fastify = Fastify();
+const fastify = Fastify({
+	logger: !EN_VIR.isPROD,
+});
 
 const morganMiddleware = morgan('tiny', {
 	stream: {
@@ -24,9 +27,14 @@ const morganMiddleware = morgan('tiny', {
 			timeWindow: '1 minute',
 		}),
 	]);
-})().then(() => {
-	logger.info('Fastify Middlewares registered');
-});
+})()
+	.then(() => {
+		logger.info('Fastify Middlewares registered');
+	})
+	.catch((e) => {
+		logger.error(e);
+		throw e;
+	});
 
 fastify.get('/', (req, reply) => {
 	reply.send('Algoloka-backend');

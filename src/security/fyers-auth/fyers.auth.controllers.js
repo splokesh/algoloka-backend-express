@@ -1,4 +1,3 @@
-import { EN_VIR } from './../../config/env.js';
 import { FyersAuthService } from './fyers.auth.services.js';
 
 const fyersAuth = new FyersAuthService();

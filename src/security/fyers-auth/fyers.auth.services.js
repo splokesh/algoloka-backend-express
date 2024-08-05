@@ -3,6 +3,7 @@ import { EN_VIR } from '../../config/env.js';
 import { UserProfileModel } from '../../schema/users.schema.js';
 import { BROKER } from '../../constants/broker.constants.js';
 import { redisClient } from '../../config/redis.js';
+import { envokeDataSocket } from '../../features/tickStreamer/envokeSocket.js';
 
 export class FyersAuthService {
 	#fyersClient = null;
@@ -11,6 +12,8 @@ export class FyersAuthService {
 			AppID: EN_VIR.fyer.app_id,
 			RedirectURL: EN_VIR.fyer.redirect_url,
 			Version: 3,
+			LogPath: 'log',
+			LoggingFlag: !EN_VIR.isPROD,
 		});
 	}
 
@@ -54,6 +57,7 @@ export class FyersAuthService {
 
 			await redisClient.set(`FYERS_ACCOUNT`, JSON.stringify(createdProfile));
 			await redisClient.expire(`FYERS_ACCOUNT`, 60 * 60 * 8);
+			envokeDataSocket();
 
 			console.log(createdProfile);
 			delete createdProfile.pan;

@@ -4,7 +4,7 @@ import { logger } from './config/logger.js';
 import { redisClient } from './config/redis.js';
 import { mongooseConnection } from './config/mongoose.js';
 import { EN_VIR } from './config/env.js';
-import { WebSocketManager } from './features/tickers/WebSocket.js';
+import { SocketManager } from './features/tickStreamer/dataSocket.js';
 
 const listen = async () => {
 	try {
@@ -15,16 +15,17 @@ const listen = async () => {
 		fyersAccount = JSON.parse(fyersAccount);
 		// console.log(fyersAccount);
 
-		const dsm = new WebSocketManager(
-			`${fyersAccount.appId}:${fyersAccount.accessToken}`,
-			EN_VIR.env === 'development',
-		);
-		dsm.connect();
-		dsm.subscribe(['BSE:SENSEX-INDEX']);
+		const dsm = new SocketManager({
+			appId: fyersAccount.appId,
+			accessToken: fyersAccount.accessToken,
+			logging: EN_VIR.env === 'development',
+		});
+		// dsm.connect();
+		// dsm.subscribe(['BSE:SENSEX-INDEX']);
 
-		setTimeout(() => {
-			dsm.subscribe(['BSE:SENSEX2480281700PE']);
-		}, 5 * 1000);
+		// setTimeout(() => {
+		// 	dsm.subscribe(['BSE:SENSEX2480281700PE']);
+		// }, 5 * 1000);
 		// setTimeout(() => {
 		// 	dsm.unsubscribe(['BSE:SENSEX-INDEX']);
 		// }, 6 * 1000);
