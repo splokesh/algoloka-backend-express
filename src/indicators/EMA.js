@@ -1,9 +1,7 @@
-import { LimitedQueue } from '../components/queue.js';
-
 // * EMA = (Closing Price x Smoothing Factor) + (Previous EMA x (1 – Smoothing Factor))
 
 export class EMA {
-	#data = new LimitedQueue(1); // Only need to store the last EMA value
+	#prevEMA = null; // Only need to store the last EMA value
 	#multiplier;
 
 	/**
@@ -27,24 +25,15 @@ export class EMA {
 		}
 		let ema;
 
-		if (this.#data.getLength() === 0) {
+		if (!this.#prevEMA) {
 			// Initialize EMA with the first price
 			ema = price;
 		} else {
-			const prevEMA = this.#data.getPrevious();
-			ema = (price - prevEMA) * this.#multiplier + prevEMA;
+			ema = (price - this.prevEMA) * this.#multiplier + this.#prevEMA;
 		}
 
-		this.#data.enqueue(ema);
+		this.#prevEMA = ema;
 
 		return ema;
-	}
-
-	/**
-	 * Get the current EMA data in the buffer array.
-	 * @returns {Array} - The list of EMA data points.
-	 */
-	getEMAData() {
-		return this.#data.getElements();
 	}
 }

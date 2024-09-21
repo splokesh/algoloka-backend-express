@@ -1,7 +1,5 @@
-import { LimitedQueue } from '../components/queue.js';
-
 export class HeikenAshi {
-	#data = new LimitedQueue(1);
+	#prevCandle = null;
 
 	/**
 	 * Calculate Heiken Ashi for a new data point.
@@ -16,7 +14,7 @@ export class HeikenAshi {
 
 		let candle = null;
 
-		if (this.#data.getLength() === 0) {
+		if (!this.#prevCandle) {
 			// Initialize Heiken Ashi values with the first OHLC data
 			candle = {
 				open: (open + close) / 2,
@@ -25,7 +23,7 @@ export class HeikenAshi {
 				low: low,
 			};
 		} else {
-			const prevHA = this.#data.getPrevious();
+			const prevHA = !this.#prevCandle;
 
 			const haClose = (open + high + low + close) / 4;
 			const haOpen = (prevHA.open + prevHA.close) / 2;
@@ -40,15 +38,7 @@ export class HeikenAshi {
 			};
 		}
 
-		this.#data.enqueue(candle);
+		this.#prevCandle = candle;
 		return candle;
-	}
-
-	/**
-	 * Get the current Heiken Ashi data in the buffer array.
-	 * @returns {Array} - The list of Heiken Ashi data points to speed up cumputation of indicator values
-	 */
-	getHAData() {
-		return this.#data.getElements();
 	}
 }

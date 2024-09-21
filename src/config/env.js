@@ -33,7 +33,7 @@ if (error) {
 
 export const EN_VIR = {
 	env: envVars.NODE_ENV,
-	isPROD: EN_VIR.env === 'production',
+	isPROD: envVars.NODE_ENV === 'production',
 	port: envVars.PORT,
 	mongo_url: `${envVars.MONGO_URL}/${envVars.MONGO_DB_NAME}`,
 	redis_url: envVars.REDIS_URL,

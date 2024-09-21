@@ -47,49 +47,43 @@ export class DataProcessor {
 	}
 
 	async processMessage(message) {
-		if (!['if', 'sf'].includes(message?.type)) return; // Ignore subscription messages
+		if (!['if', 'sf'].includes(message?.type)) return;
 		const { symbol, ltp, vol_traded_today, exch_feed_time, last_traded_time } =
 			message;
 		const timestamp = exch_feed_time || last_traded_time;
-
-		console.log(timestamp * 1000, format(timestamp * 1000, this.timeFormat));
 		const minute = Math.floor(timestamp / 60) * 60 * 1000;
-		console.log(minute, format(minute, this.timeFormat));
 
-		// Update or create candle
-		if (
-			!this.currentCandles[symbol] ||
-			this.currentCandles[symbol].time !== minute
-		) {
-			// // Store previous candle if exists
-			if (this.currentCandles[symbol]) {
-				// await this.storeCandle(this.currentCandles[symbol]);
-				// Update Redis queue
-				await this.updateStockData(symbol, this.currentCandles[symbol]);
-				// emit candle event
-			}
+		const candle =
+			this.currentCandles[symbol] || this.createNewCandle(symbol, minute, ltp);
 
-			// Start a new candle
-			this.currentCandles[symbol] = {
-				symbol,
-				time: minute,
-				formatted: format(minute, this.timeFormat),
-				open: ltp,
-				high: ltp,
-				low: ltp,
-				close: ltp,
-				volume: vol_traded_today || 0,
-				is_real_time_data: true,
-			};
+		if (candle.time !== minute) {
+			await this.updateStockData(symbol, candle);
+			this.currentCandles[symbol] = this.createNewCandle(symbol, minute, ltp);
 		} else {
-			// Update existing candle
-			const candle = this.currentCandles[symbol];
-			candle.high = Math.max(candle.high, ltp);
-			candle.low = Math.min(candle.low, ltp);
-			candle.close = ltp;
-			if (vol_traded_today !== undefined) {
-				candle.volume = vol_traded_today;
-			}
+			this.updateCandle(candle, ltp, vol_traded_today);
+		}
+	}
+
+	createNewCandle(symbol, minute, ltp) {
+		return {
+			symbol,
+			time: minute,
+			formatted: format(minute, this.timeFormat),
+			open: ltp,
+			high: ltp,
+			low: ltp,
+			close: ltp,
+			volume: 0,
+			is_real_time_data: true,
+		};
+	}
+
+	updateCandle(candle, ltp, volume) {
+		candle.high = Math.max(candle.high, ltp);
+		candle.low = Math.min(candle.low, ltp);
+		candle.close = ltp;
+		if (volume !== undefined) {
+			candle.volume = volume;
 		}
 	}
 
@@ -140,15 +134,16 @@ export class DataProcessor {
 
 	async fetchHistoricalData(symbol, days = 100) {
 		const endDate = format(new Date(), 'yyyy-MM-dd');
-		const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
+		const startDate = format(subDays(new Date(), 100), 'yyyy-MM-dd');
+		console.log({ startDate, endDate });
 		try {
 			const { s, code, candles, message } = await this.#fyersClient.getHistory({
 				symbol: symbol,
 				resolution: '1',
-				date_format: '1',
+				date_format: 1,
 				range_from: startDate,
 				range_to: endDate,
-				cont_flag: '1',
+				cont_flag: 1,
 			});
 
 			if (s === 'ok') {
@@ -186,23 +181,21 @@ export class DataProcessor {
 		 * 6.Total traded quantity (volume)
 		 */
 
-		const ohlc_data = candles.map(([time, open, high, low, close, volume]) => {
-			return {
-				symbol,
-				time: time * 1000,
-				open,
-				high,
-				low,
-				close,
-				volume,
-				formatted: format(time * 1000, this.timeFormat),
-				is_real_time_data: false,
-			};
-		});
+		const ohlc_data = candles.map(([time, open, high, low, close, volume]) => ({
+			symbol,
+			time: time * 1000,
+			open,
+			high,
+			low,
+			close,
+			volume,
+			formatted: format(time * 1000, this.timeFormat),
+			is_real_time_data: false,
+		}));
 
-		for await (let candle of ohlc_data) {
-			this.computeIndicatorData(symbol, candle);
-		}
+		await Promise.all(
+			ohlc_data.map((candle) => this.computeIndicatorData(symbol, candle)),
+		);
 	}
 
 	async computeIndicatorData(symbol, candle, store = true) {
